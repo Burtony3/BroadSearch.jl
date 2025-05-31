@@ -42,7 +42,7 @@ sols = search!(bf, tree, multithread=true);
 # =====================================================================
 # === Plotting
 
-using CairoMakie
+using CairoMakie, Colors
 
 begin
     # Setting up figure
@@ -55,27 +55,50 @@ begin
     end
 
     # Sorting solutions
-    # metric = s -> norm(s.v∞)
+    metric = s -> norm(s.v∞)
     # metric = s -> norm(s.C₃)
-    # metric = s -> (s._epochs[end] - s._epochs[1])
+    # metric = s -> -(s._epochs[end] - s._epochs[1])
     # metric = s -> s._epochs[1]
     # metric = s -> s.cost
 
     # Filtering metrics
-    # metric = s -> norm(s.v∞) < 5.75
-    metric = s -> norm(s.C₃) < 15
+    # metric = s -> norm(s.v∞) < 6.25
+    # metric = s -> norm(s.C₃) < 15
 
     
     # Plotting solutions
     # sequences = nothing
-    # sequences = ["EVVEJ"]
-    # lines!(ax, sols) # Plot everything
+    # sequences = ["EVVEJ", "EEJ", "EVEEJ", "EMEVJ"]
+    lines!(ax, sols) # Plot everything
     # lines!(ax, sols, only=sequences) # Plot specific sequences
+    # lines!(ax, sols, only=sequences, best=metric) # Plot best of each sequence
     # lines!(ax, sort(sols, by = metric)[1:100]) # Plot top x
-    lines!(ax, filter(metric, sols)) # All solutions under x
+    # lines!(ax, filter(metric, sols)) # All solutions under x
     Legend(fig[1, 2], ax)
+
+    # Plotting for logo
+    # fig = Figure(backgroundcolor = (:white, 0.0))
+    # ax  = Axis(fig[1, 1], aspect=DataAspect(), backgroundcolor=(:white, 0.0))
+    # hidedecorations!(ax)
+    # hidespines!(ax)
+    # R = 3e7
+    # θ⃗ = LinRange(0.0, 2π, 100)
+    # poly!(ax, 
+    #     Point2f[(R*cos(θ), R*sin(θ)) for θ in θ⃗],
+    #     color = :dimgray, strokecolor = :black, strokewidth=2
+    # )
+    # # lines!(ax, defaultdata.earth, color=:black, linestyle=:dash)
+    # # lines!(ax, defaultdata.jupiter, color=:black, linestyle=:dash)
+    # sequences = ["EVVEJ", "EEJ", "EVEEJ", "EMEVJ"]
+    # logocolors = Colors.JULIA_LOGO_COLORS
+    # lines!(ax, sols, only=sequences, best=metric, linewidth=3, 
+    #     cmap=[logocolors.blue, logocolors.red, logocolors.green, logocolors.purple]
+    # )
+
     fig
 end
+
+# save(@__DIR__()*"/../assets/logo.png", fig)
 
 begin
     # Setting up figure

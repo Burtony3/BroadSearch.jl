@@ -20,19 +20,18 @@ end
 
 function evaluate!(cost::AbstractSearchCost, node::LambertNode, parent::LaunchNode)::Nothing
 
-    # TODO: Check if node is new?
-
-    # Calculating lambert transfer
-    v1 = state(parent.body, parent.epoch)[2]
-    v2 = state(node.body, node.epoch)[2]
-    _, v1′, _, v2′ = lambert(parent.body, node.body, parent.epoch, node.epoch)
+    # Creating problem interface
+    prob = BallisticLambertsProblem(parent.body, node.body, parent.epoch, node.epoch)
+    sol  = LambertsProblem.solve(prob, Izzo())
 
     # Finding cost
-    C₃ = norm(v1′ - v1)^2
+    v1 = state(parent.body, parent.epoch)[2]
+    C₃ = norm(sol.v⃗₁ - v1)^2
 
     # Updating node
     node.cost = max(C₃ - cost.C₃max, 0.0) |> sqrt
-    node.v∞in = v2′ - v2
+    v2 = state(node.body, node.epoch)[2]
+    node.v∞in = sol.v⃗₂ - v2
     node.status = node.cost < cost.Δvmax ? :valid : :invalid
 
     nothing
@@ -41,15 +40,13 @@ end
 
 function evaluate!(cost::BasicFlyby, node::LambertNode, parent::LambertNode)::Nothing
 
-    # TODO: Check if node is new?
-
-    # Calculating lambert transfer
-    v1 = state(parent.body, parent.epoch)[2]
-    v2 = state(node.body, node.epoch)[2]
-    _, v1′, _, v2′ = lambert(parent.body, node.body, parent.epoch, node.epoch)
+    # Creating problem interface
+    prob = BallisticLambertsProblem(parent.body, node.body, parent.epoch, node.epoch)
+    sol  = LambertsProblem.solve(prob, Izzo())
 
     # Calculating flyby
-    v∞₊, v∞₋ = parent.v∞in, v1′ - v1
+    v1 = state(parent.body, parent.epoch)[2]
+    v∞₊, v∞₋ = parent.v∞in, sol.v⃗₁ - v1
     Δv∞      = abs( norm(v∞₊) - norm(v∞₋) )
     v̅∞       = 0.5*(norm(v∞₊) + norm(v∞₋))
     dotprod  =  v∞₊⋅v∞₋ / ( v̅∞^2 )
@@ -62,7 +59,8 @@ function evaluate!(cost::BasicFlyby, node::LambertNode, parent::LambertNode)::No
 
     # Updating node
     node.cost = Δv∞
-    node.v∞in = v2′ - v2
+    v2 = state(node.body, node.epoch)[2]
+    node.v∞in = sol.v⃗₂ - v2
     node.status = node.cost < cost.Δvmax && δ < δmax ? :valid : :invalid
 
     nothing

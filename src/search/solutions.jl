@@ -41,12 +41,15 @@ function BroadSearchSolution(node::AbstractTreeNode)::BroadSearchSolution
     vinf = nodes[end].v∞in
 
     # C3
-    v1 = state(nodes[1].body, nodes[1].epoch)[2]
+    # v1 = state(nodes[1].body, nodes[1].epoch)[2]
     # v2 = state(nodes[2].body, nodes[2].epoch)[2]
-    _, v1′, _, _ = lambert(nodes[1].body, nodes[2].body, nodes[1].epoch, nodes[2].epoch)
+    # _, v1′, _, _ = lambert(nodes[1].body, nodes[2].body, nodes[1].epoch, nodes[2].epoch)
+    prob = BallisticLambertsProblem(nodes[1].body, nodes[2].body, nodes[1].epoch, nodes[2].epoch)
+    sol  = LambertsProblem.solve(prob, Izzo())
 
     # Finding cost
-    C₃ = norm(v1′ - v1)^2
+    v1 = state(nodes[1].body, nodes[1].epoch)[2]
+    C₃ = norm(sol.v⃗₁ - v1)^2
 
     return BroadSearchSolution(seq, C₃, vinf, epochs, _epochs, nodes, cost)
 end

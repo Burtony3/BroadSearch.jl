@@ -43,9 +43,9 @@ function state(ephem::BasicEphemeris, t::Real)
     # Assuming elliptical for now
     Δt = t - ephem.t₀
     if eccentricity(ephem) < 1.0
-        return _propKepTE(ephem.r⃗₀, ephem.v⃗₀, Δt, ephem.parent.μ)
+        return LambertsProblem._propKepTE(ephem.r⃗₀, ephem.v⃗₀, Δt, ephem.parent.μ)
     else
-        return _propKepTH(ephem.r⃗₀, ephem.v⃗₀, Δt, ephem.parent.μ)
+        return LambertsProblem._propKepTH(ephem.r⃗₀, ephem.v⃗₀, Δt, ephem.parent.μ)
     end
 end
 

@@ -1,6 +1,6 @@
 module CairoMakieExt
 
-using BroadSearch, CairoMakie, LinearAlgebra, Dates, DataFrames
+using BroadSearch, CairoMakie, LinearAlgebra, Dates, DataFrames, LambertsProblem
 
 # =====================================================================
 # === Plotting based on ephemerides
@@ -39,8 +39,10 @@ function CairoMakie.lines!(ax, sol::BroadSearchSolution; label=nothing, kwargs..
     # Looping over pairs of nodes
     for (k, (n1, n2)) in enumerate(zip( sol.nodes, sol.nodes[2:end] ))
         # Running lambert
-        r1, v1, _, _ = lambert(n1.body, n2.body, n1.epoch, n2.epoch)
-        lam  = BasicEphemeris(r1, v1, n1.epoch;
+        # r1, v1, _, _ = lambert(n1.body, n2.body, n1.epoch, n2.epoch)
+        prob = BallisticLambertsProblem(n1.body, n2.body, n1.epoch, n2.epoch)
+        sol  = LambertsProblem.solve(prob, Izzo())
+        lam  = BasicEphemeris(sol.r⃗₁, sol.v⃗₁, n1.epoch;
             μ=0., 
             parent=n1.body.parent, 
             name=n1.body.name*"-"*n2.body.name
@@ -57,14 +59,31 @@ end
 # =====================================================================
 # === Plotting set of broad search solutions
 
-function CairoMakie.lines!(ax, sols::Vector{BroadSearchSolution}; only=nothing, cmap=:seaborn_bright, kwargs...)
+function CairoMakie.lines!(ax, sols::Vector{BroadSearchSolution}; only=nothing, best=nothing, cmap=:seaborn_bright, kwargs...)
 
-    # 
-    colors = cgrad(cmap).colors
+    # Setup
+    colors = isa(cmap, Symbol) ? cgrad(cmap).colors : cmap
     k = 0
     d = Dict{String, typeof(colors[1])}()
 
-    # 
+    # Filtering results
+    sols′ = BroadSearchSolution[]
+    if ~isnothing(best) && ~isnothing(only)
+        @assert isa(best, Function)
+
+        # Getting best solution of a sequence by a metrics
+        # lines!(ax, sort(sols, by = metric)[1:100]) # Plot top x
+        # lines!(ax, filter(metric, sols)) # All solutions under x
+        for sequence in only
+            push!(sols′, sort(filter(s->s.sequence == sequence, sols), by=best)[1])
+        end
+
+        # Updating solutions
+        sols = sols′
+        only = nothing
+    end
+
+    # Plotting each solution
     for sol in sols
         # Getting color
         if !isnothing(only) && sol.sequence ∉ only; continue; end
@@ -77,7 +96,7 @@ function CairoMakie.lines!(ax, sols::Vector{BroadSearchSolution}; only=nothing, 
         end
 
         # Plotting
-        CairoMakie.lines!(ax, sol, color=d[sol.sequence], label=label)
+        CairoMakie.lines!(ax, sol; color=d[sol.sequence], label=label, kwargs...)
 
     end
 end
