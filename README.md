@@ -118,4 +118,4 @@ Please follow Julia style guidelines and add docstrings for new functionality.
 
 ## License
 
-Released under the MIT License
+Released under the MIT License, see [License Tab](https://github.com/Burtony3/BroadSearch.jl?tab=MIT-1-ov-file) for details
