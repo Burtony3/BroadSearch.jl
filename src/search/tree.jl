@@ -11,7 +11,11 @@ export initialize_tree
 # =====================================================================
 # === Setting up root of tree
 
-# Root
+"""
+    Root(goal::AbstractSearchGoal, cost::AbstractSearchCost, policy::AbstractSearchPolicy, children::Union{Vector{<:AbstractTreeNode}, Nothing}, branches::Int, status::Symbol)
+
+Root node of the search tree, holding the search goal, cost function, policy, and initial branches.
+"""
 mutable struct Root
     goal::AbstractSearchGoal
     cost::AbstractSearchCost
@@ -56,7 +60,11 @@ Base.show(io::IO, node::AbstractTreeNode) = show(io, MIME"text/plain"(), node)
 #   :valid    = Still explorable
 #   :invalid  = Completely explored (nodes that exceed costs are removed?)
 #   :complete = Goal achived
+"""
+    root(node::AbstractTreeNode) -> Root
 
+Return the root ancestor of a given tree node.
+"""
 function root(node::AbstractTreeNode)::Root
     root = node.parent
     while !isa(root, Root)
@@ -65,6 +73,11 @@ function root(node::AbstractTreeNode)::Root
     return root
 end
 
+"""
+    depth(node::AbstractTreeNode) -> Int
+
+Compute the depth of `node` within its search tree (child of root has depth 1).
+"""
 function depth(node::AbstractTreeNode)::Int
     k = 1
     root = node.parent
@@ -78,6 +91,11 @@ end
 # =====================================================================
 # === Trajectory start nodes
 
+"""
+    LaunchNode(body::AbstractEphemeris, epoch::Int, parent::Union{Root, Nothing}, children::Union{Vector{<:AbstractTreeNode}, Nothing}, status::Symbol, cost::Float64, visits::Int)
+
+Node representing a launch state from a celestial body at a given epoch.
+"""
 mutable struct LaunchNode <: AbstractTreeNode
     body::AbstractEphemeris
     epoch::Int
@@ -90,6 +108,11 @@ mutable struct LaunchNode <: AbstractTreeNode
     visits::Int
 end
 
+"""
+    HyperbolaNode(v⃗∞::SVector{3, Float64}, epoch::Int, parent::Union{Root, Nothing}, children::Union{Vector{<:AbstractTreeNode}, Nothing}, status::Symbol, cost::Float64, visits::Int)
+
+Node that either the trajectory originates from a hyperbolic entry state, or ends at a hyperbolic exit state
+"""
 mutable struct HyperbolaNode <: AbstractTreeNode
     v⃗∞::SVector{3, Float64}
     epoch::Int
@@ -105,6 +128,11 @@ end
 # =====================================================================
 # === Midpoint Nodes
 
+"""
+    LambertNode(body::AbstractEphemeris, epoch::Int, parent::AbstractTreeNode, children::Union{Vector{<:AbstractTreeNode}, Nothing}, v∞in::SVector{3, Float64}, status::Symbol, cost::Float64, visits::Int)
+
+Node representing a Lambert‐arc transfer to `body` at a given epoch with incoming velocity `v∞in`.
+"""
 mutable struct LambertNode <: AbstractTreeNode
     body::AbstractEphemeris
     epoch::Int
@@ -125,6 +153,13 @@ Base.copy(n::LambertNode) = LambertNode(n.body, n.epoch, n.parent, n.children, n
 # =====================================================================
 # === Initializing
 
+"""
+    initialize_tree(goal::AbstractSearchGoal, cost::AbstractSearchCost, policy::AbstractSearchPolicy, ephem::AbstractEphemeris, tspan::Tuple{T, T}, N::Int) where T<:Union{DateTime, Int}
+
+Initialize the search tree by creating a `Root` node with launch node children over the time span `tspan` divided into `N` epochs.
+
+TODO: Allow initial nodes to also be hyperbolas
+"""
 function initialize_tree(
     goal::AbstractSearchGoal, cost::AbstractSearchCost, policy::AbstractSearchPolicy,
     ephem::AbstractEphemeris, tspan::Tuple{T, T}, 

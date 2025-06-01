@@ -5,6 +5,13 @@
 
 export SpiceEphemeris
 
+"""
+    SpiceEphemeris(name::String, parent::Union{AbstractEphemeris,Nothing, String}; frame::String="ECLIPJ2000", bodname::Union{String,Nothing}=nothing)
+    SpiceEphemeris(id::Int, parent::Union{AbstractEphemeris,Nothing, String}; frame::String="ECLIPJ2000", bodname::Union{String,Nothing}=nothing)
+
+Create a SPICE‐based ephemeris by specifying either the body name or NAIF ID.  
+Automatically retrieves the body’s radius and gravitational parameter from SPICE kernels, and links to an optional parent ephemeris.
+"""
 struct SpiceEphemeris{T} <: AbstractEphemeris
     μ::T
     R::T
@@ -12,52 +19,60 @@ struct SpiceEphemeris{T} <: AbstractEphemeris
     id::Int
     name::String
     frame::String
-end
 
-function SpiceEphemeris(name::String, parent::Union{AbstractEphemeris, Nothing, String}; frame::String="ECLIPJ2000", bodname::Union{String, Nothing}=nothing)
+    # Primary Constructor (string name)
+    function SpiceEphemeris(name::String, parent::Union{AbstractEphemeris, Nothing, String}; frame::String="ECLIPJ2000", bodname::Union{String, Nothing}=nothing)
 
-    R, μ = 0.0, 0.0
-    try
-        R  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "RADII") 
-        if length(R) > 1; R = sum(R)/length(R); end
-    catch
-        @warn "Could not find radius for $name, setting to 0"
-        R  = 0.0
-    end
-    try
-        μ  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "GM")[1]
-    catch
-        @warn "Could not find GM for $name, setting to 0"
-        μ  = 0.0
-    end
-    id = SPICE.bodn2c(name) 
-
-    return SpiceEphemeris(μ, R, parent, id, name, frame)
-end
-
-function SpiceEphemeris(id::Int, parent::Union{AbstractEphemeris, Nothing, String}; frame::String="ECLIPJ2000", bodname::Union{String, Nothing}=nothing)
-
-    name = SPICE.bodc2n(id) 
-    R, μ = 0.0, 0.0
-    try
-        R  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "RADII") 
-        if length(R) > 1; R = sum(R)/length(R); end
-    catch
-        @warn "Could not find radius for $name, setting to 0"
-        R  = 0.0
-    end
-    try
-        μ  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "GM")[1]
-    catch
-        @warn "Could not find GM for $name, setting to 0"
-        μ  = 0.0
+        R, μ = 0.0, 0.0
+        try
+            R  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "RADII") 
+            if length(R) > 1; R = sum(R)/length(R); end
+        catch
+            @warn "Could not find radius for $name, setting to 0"
+            R  = 0.0
+        end
+        try
+            μ  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "GM")[1]
+        catch
+            @warn "Could not find GM for $name, setting to 0"
+            μ  = 0.0
+        end
+        id = SPICE.bodn2c(name) 
+    
+        return new(μ, R, parent, id, name, frame)
     end
 
-    return SpiceEphemeris(μ, R, parent, id, name, frame)
+    # Secondary constructor (id number)
+    function SpiceEphemeris(id::Int, parent::Union{AbstractEphemeris, Nothing, String}; frame::String="ECLIPJ2000", bodname::Union{String, Nothing}=nothing)
+
+        name = SPICE.bodc2n(id) 
+        R, μ = 0.0, 0.0
+        try
+            R  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "RADII") 
+            if length(R) > 1; R = sum(R)/length(R); end
+        catch
+            @warn "Could not find radius for $name, setting to 0"
+            R  = 0.0
+        end
+        try
+            μ  = SPICE.bodvrd(isnothing(bodname) ? name : bodname, "GM")[1]
+        catch
+            @warn "Could not find GM for $name, setting to 0"
+            μ  = 0.0
+        end
+    
+        return new(μ, R, parent, id, name, frame)
+    end
 end
 
 
 # Methods
+"""
+    state(ephem::SpiceEphemeris, t::Real; abcorr::String="None")
+
+Propagate the SPICE‐based ephemeris to time `t` (seconds since J2000 or ephemeris epoch) under SPICE spacecraft‐body dynamics.  
+Returns the position and velocity vectors in Cartesian coordinates.
+"""
 function state(ephem::SpiceEphemeris, t::Real; abcorr::String="None")
 
     # utc = Dates.format( J2000 + Second(Int(round(t))), dateformat"yyyy-mm-ddTHH:MM:SS")
@@ -70,9 +85,13 @@ function state(ephem::SpiceEphemeris, t::Real; abcorr::String="None")
     return SA[x[1:3]...], SA[x[4:6]...]
 end
 
-# state(ephem::AbstractEphemeris, t::DateTime) = state(ephem, secondsPast(t))
 
+"""
+    period(ephem::SpiceEphemeris) -> Float64
 
+Compute the orbital period of a SPICE‐based ephemeris assuming Keplerian motion about its parent.  
+Uses a sample state at a fixed time to derive semimajor axis and calculate period.
+"""
 function period(ephem::SpiceEphemeris)
     rvec, vvec = state(ephem, 500_000_000)
     r, v = norm(rvec), norm(vvec)
@@ -81,7 +100,12 @@ function period(ephem::SpiceEphemeris)
     return 2π*sqrt( a^3 / ephem.parent.μ )
 end
 
+"""
+    eccentricity(ephem::SpiceEphemeris) -> Float64
 
+Calculate the orbital eccentricity of a SPICE‐based ephemeris from a sample propagated state.  
+Computes specific energy and angular momentum to return a scalar eccentricity.
+"""
 function eccentricity(ephem::SpiceEphemeris)
     rvec, vvec = state(ephem, 500_000_000)
     r, v = norm(rvec), norm(vvec)
@@ -95,7 +119,17 @@ end
 
 # Extending base
 import Base: ==, isequal
+"""
+    ==(e1::SpiceEphemeris, e2::SpiceEphemeris) -> Bool
+
+Check equality of two SPICE ephemerides by comparing μ, radius, and NAIF ID.
+"""
 ==(e1::SpiceEphemeris, e2::SpiceEphemeris) = e1.μ == e2.μ && e1.R == e2.R && e1.id == e2.id
+"""
+    isequal(e1::SpiceEphemeris, e2::SpiceEphemeris) -> Bool
+
+Alias for `==` to support hashing of SPICE ephemerides.
+"""
 isequal(e1::SpiceEphemeris, e2::SpiceEphemeris) = e1 == e2
 
 
@@ -109,6 +143,12 @@ isequal(e1::SpiceEphemeris, e2::SpiceEphemeris) = e1 == e2
 
 # export MeshedSpiceEphemeris
 
+"""
+    MeshedSpiceEphemeris(μ::T, R::T, parent::Union{AbstractEphemeris,Nothing}, id::Int, name::String, frame::String, _coefficients::SMatrix{6,4,T}, tspan::Tuple{T,T}) where T<:Real
+
+Represent an interpolated SPICE ephemeris using polynomial coefficients over a specified time span.  
+Provides fast Keplerian state evaluation via mesh‐based interpolation of classical elements.
+"""
 struct MeshedSpiceEphemeris{T} <: AbstractEphemeris
     μ::T
     R::T
@@ -122,6 +162,11 @@ end
 
 
 # Methods
+"""
+    state(ephem::MeshedSpiceEphemeris, t::Real) -> Tuple{SVector{3,T},SVector{3,T}}
+
+Interpolate Keplerian elements for the given time `t` using stored polynomial coefficients, then convert to Cartesian position and velocity.
+"""
 function state(ephem::MeshedSpiceEphemeris, t::Real)
 
     # TODO: Need to double check this is correct still
@@ -151,6 +196,11 @@ function state(ephem::MeshedSpiceEphemeris, t::Real)
 end
 
 # Helper functions
+"""
+    _mean2eccAnomaly(M::Real, e::Real; tol::Float64=1e-10, maxiters::Int=20) -> Real
+
+Solve Kepler’s equation for eccentric anomaly `E` given mean anomaly `M` and eccentricity `e`, using Newton’s method.
+"""
 function _mean2eccAnomaly(M::Real, e::Real; tol::Float64=1e-10, maxiters::Int=20)::Real
     # Creating initial guess for E
     E = M < π ? M + e/2 : M - e/2

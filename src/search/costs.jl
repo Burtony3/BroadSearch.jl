@@ -9,6 +9,11 @@ export evaluate!
 # =====================================================================
 # === Types
 
+"""
+    BasicFlyby(Δvmax::Float64, C₃max::Float64)
+
+Define a flyby cost evaluator using maximum allowable Δv∞ and C₃ limits.
+"""
 struct BasicFlyby <: AbstractSearchCost
     Δvmax::Float64
     C₃max::Float64
@@ -18,6 +23,11 @@ end
 # =====================================================================
 # === Cost FUnctions
 
+"""
+    evaluate!(cost::AbstractSearchCost, node::LambertNode, parent::LaunchNode)
+
+Evaluate C₃‐based launch cost to a `LambertNode`, updating its cost, incoming v∞, and status.
+"""
 function evaluate!(cost::AbstractSearchCost, node::LambertNode, parent::LaunchNode)::Nothing
 
     # Creating problem interface
@@ -37,7 +47,11 @@ function evaluate!(cost::AbstractSearchCost, node::LambertNode, parent::LaunchNo
     nothing
 end
 
+"""
+    evaluate!(cost::BasicFlyby, node::LambertNode, parent::LambertNode)
 
+Evaluate flyby maneuver cost to a `LambertNode`, updating its cost, incoming v∞, and status.
+"""
 function evaluate!(cost::BasicFlyby, node::LambertNode, parent::LambertNode)::Nothing
 
     # Creating problem interface
@@ -70,6 +84,11 @@ end
 # =====================================================================
 # === Helper FUnctions
 
+"""
+    flyby(ephem, t, v, v′)
+
+Compute the Δv∞ and validity flag for a planetary flyby at time `t` given ephemeris `ephem` and velocities `v` (incoming) and `v′` (outgoing).
+"""
 function flyby(ephem, t, v, v′)
     vP       = state(ephem, t)[2]
     v∞₊, v∞₋ = v - vP, v′ - vP

@@ -3,6 +3,11 @@
 
 import LambertsProblem
 
+"""
+    LambertsProblem.BallisticLambertsProblem(e1::AbstractEphemeris, e2::AbstractEphemeris, t1::T, t2::T; kwargs...) where T<:Real
+
+Construct a `BallisticLambertsProblem` from two ephemerides at real‐valued times, using their Keplerian states to compute the time of flight and boundary position vectors.
+"""
 function LambertsProblem.BallisticLambertsProblem(
     e1::AbstractEphemeris, e2::AbstractEphemeris, 
     t1::T, t2::T; kwargs...) where T<:Real
@@ -16,6 +21,11 @@ function LambertsProblem.BallisticLambertsProblem(
     return BallisticLambertsProblem(r1, r2, tof, e1.parent.μ; kwargs...)
 end
 
+"""
+    LambertsProblem.BallisticLambertsProblem(e1::AbstractEphemeris, e2::AbstractEphemeris, t1::T, t2::T; kwargs...) where T<:DateTime
+
+Construct a `BallisticLambertsProblem` from two ephemerides at `DateTime` times, converting to seconds past the epoch to compute time of flight and boundary position vectors.
+"""
 function LambertsProblem.BallisticLambertsProblem(
     e1::AbstractEphemeris, e2::AbstractEphemeris, 
     t1::T, t2::T; kwargs...) where T<:DateTime
