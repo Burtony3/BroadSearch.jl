@@ -12,7 +12,7 @@ function CairoMakie.lines!(ax, ephem::AbstractEphemeris; tspan=nothing, kwargs..
         # Getting orbit period of planet
         T = period(ephem)
         t₀ = hasfield(typeof(ephem), :t₀) ? ephem.t₀ : 0
-        epochs = LinRange(t₀, t₀ + T, 100)
+        epochs = LinRange(t₀, t₀ + T, 300)
     else # plot specified time span
         if typeof(tspan[1]) <: DateTime
             tspan = (
@@ -20,7 +20,7 @@ function CairoMakie.lines!(ax, ephem::AbstractEphemeris; tspan=nothing, kwargs..
                 BroadSearch.secondsPast(tspan[2])
             )
         end
-        epochs = LinRange(tspan[1], tspan[2], 100)
+        epochs = LinRange(tspan[1], tspan[2], 300)
     end
     R      = [ state(ephem, t)[1] for t in epochs ]
     x      = [r[1] for r in R]

@@ -115,7 +115,6 @@ Node that either the trajectory originates from a hyperbolic entry state, or end
 """
 mutable struct HyperbolaNode <: AbstractTreeNode
     v⃗∞::SVector{3, Float64}
-    epoch::Int
 
     parent::Union{Root, Nothing}
     children::Union{Vector{<:AbstractTreeNode}, Nothing}

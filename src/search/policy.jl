@@ -35,6 +35,13 @@ function expand!(parent::AbstractTreeNode, policy::BasicPolicy)::Nothing
 
         # Looping over values
         for tof in tofs
+
+            # TODO: This function probably needs the goal and the policy to more correctly make these
+            # Ideally the policy should not have the goal planet in it
+            # That way I can have the set of nodes be created based on the type of node, and the policy
+            # something like new_nodes = germinate(LambertNode, policy, goal)
+            # then from there push! the new nodes afterwards iteratively
+
             # Looping over node types
             for type in policy.nodes
                 # Appending to array
@@ -53,7 +60,6 @@ end
 # =====================================================================
 # === Building new children based on policy
 
-# TODO: Need to handle hyperbola case later (no body field)
 
 """
     new_node(::Type{LambertNode}, parent::AbstractTreeNode, body::AbstractEphemeris, tof::Int) -> LambertNode
@@ -63,6 +69,17 @@ Create a new `LambertNode` child for `parent`, targeting `body` with time‐of�
 function new_node(::Type{LambertNode}, parent::AbstractTreeNode, body::AbstractEphemeris, tof::Int)
 
     return LambertNode(body, parent.epoch+tof, parent, nothing, SA[-1.0, -1, -1], :new, -1.0, 0)
+end
+
+
+"""
+    new_node(::Type{LambertNode}, parent::AbstractTreeNode, body::AbstractEphemeris, tof::Int) -> LambertNode
+
+Create a new `LambertNode` child for `parent`, targeting `body` with time‐of‐flight `tof`.
+"""
+function new_node(::Type{HyperbolaNode}, parent::AbstractTreeNode, v∞::Float64, ra::Float64, dec::Float64)
+
+    return HyperbolaNode(v∞*SA[cosd(ra)*cosd(dec), sind(ra)*cosd(dec), sind(dec)], parent, nothing, :new, 0.0, 0)
 end
 
 

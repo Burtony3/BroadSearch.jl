@@ -49,12 +49,12 @@ struct BasicEphemeris{T} <: AbstractEphemeris
     end
 
     # Datetime Constructor
-    function BasicEphemeris(r::SVector{3, T}, v::SVector{3, T}, t::DateTime; kwargs...) where T<:Real
-        return new{T}(r, v, secondsPast(t); kwargs...)
+    function BasicEphemeris(r::SVector{3, T}, v::SVector{3, T}, t::DateTime; μ::T=0.0, R::T=0.0, parent=nothing, name="", id=0) where T<:Real
+        return new{T}(r, v, secondsPast(t), μ, R, parent, id, name)
     end
 
     # Center Body Constructor
-    function BasicEphemeris(μ::Real; name="")
+    function BasicEphemeris(μ::T; name="") where T<:Real
         return new{T}(SA[0., 0., 0.], SA[0., 0., 0.], 0, μ, 0.0, nothing, 0, name)
     end
 end

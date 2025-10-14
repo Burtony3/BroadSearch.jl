@@ -74,10 +74,18 @@ end
 Goal for departing with a specified hyperbolic excess velocity at a given epoch within tolerances.
 """
 struct VinfEscape <: AbstractSearchGoal
-    v∞::SVector{3, Float64}
-    epoch::Int
-    Δv∞::Float64  # Allowable vector norm difference
-    Δepoch::Float64 # Allowable time different
+    ra::Float64
+    dec::Float64
+    v̅∞::Float64
+    v̲∞::Float64
 end
 
-# Is there a valid flyby at a current node that will allow this escape vector?
+"""
+    atGoal(goal::VinfEscape, node::AbstractTreeNode) -> Bool
+
+Check if `node` is a `HyperbolaNode`, then return `true`. By construction only `HyperbolaNode`,
+with valid conditions will be tested.
+"""
+function atGoal(::VinfEscape, node::AbstractTreeNode)
+    return isa(node, HyperbolaNode)
+end

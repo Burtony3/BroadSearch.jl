@@ -10,6 +10,7 @@ using Dates, Printf, ProgressBars, Requires
 # include("orbits/kepler-prop.jl")
 include("orbits/ephemeris.jl")
 include("orbits/lambert.jl")
+include("orbits/hyperbolas.jl")
 include("orbits/default-data.jl")
 
 # Search setup scripts
